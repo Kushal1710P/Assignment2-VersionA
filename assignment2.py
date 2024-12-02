@@ -160,13 +160,13 @@ def main():
 
     # If human-readable format is requested, convert values
     if args.human_readable:
-        total_mem = bytes_to_human_readable(total_mem * 1024)  # Convert from KiB to B for human-readable
-        used_mem = bytes_to_human_readable(used_mem * 1024)    # Same conversion
-        avail_mem = bytes_to_human_readable(avail_mem * 1024)
+        total_mem_hr = bytes_to_human_readable(total_mem * 1024)  # Convert from KiB to B for human-readable
+        used_mem_hr = bytes_to_human_readable(used_mem * 1024)    # Same conversion
+        avail_mem_hr = bytes_to_human_readable(avail_mem * 1024)
     else:
-        total_mem = f"{total_mem} KiB"
-        used_mem = f"{used_mem} KiB"
-        avail_mem = f"{avail_mem} KiB"
+        total_mem_hr = f"{total_mem} KiB"
+        used_mem_hr = f"{used_mem} KiB"
+        avail_mem_hr = f"{avail_mem} KiB"
 
     # Print the memory usage graph
     bar_graph = percent_to_graph(percent_used, args.length)
@@ -183,18 +183,38 @@ def main():
             pid_rss = rss_mem_of_pid(pid)
             total_prog_rss += pid_rss
 
+        # Ensure the total_prog_rss is in kilobytes for calculation
+        total_prog_rss_kb = total_prog_rss
+
+        # If human-readable format is requested, convert program's total memory usage
         if args.human_readable:
-            total_prog_rss = bytes_to_human_readable(total_prog_rss * 1024)  # Convert from KiB to B
-        print(f"{args.program}        [{percent_to_graph(total_prog_rss / total_mem, args.length)}] {total_prog_rss}/{total_mem}")
-        
+            total_prog_rss_hr = bytes_to_human_readable(total_prog_rss * 1024)  # Convert from KiB to B
+        else:
+            total_prog_rss_hr = f"{total_prog_rss} KiB"
+
+        # Calculate the percentage used by the program in relation to total memory
+        prog_percent_used = total_prog_rss_kb / total_mem
+
+        # Print the program's memory usage with graph
+        print(f"{args.program}        [{percent_to_graph(prog_percent_used, args.length)}] {total_prog_rss_hr}/{total_mem_hr}")
+
         for pid in pids:
             pid_rss = rss_mem_of_pid(pid)
+
+            # If human-readable format is requested, convert PID's RSS memory usage
             if args.human_readable:
-                pid_rss = bytes_to_human_readable(pid_rss * 1024)
-            print(f"{pid}         [{percent_to_graph(pid_rss / total_mem, args.length)}] {pid_rss}/{total_mem}")
+                pid_rss_hr = bytes_to_human_readable(pid_rss * 1024)
+            else:
+                pid_rss_hr = f"{pid_rss} KiB"
+
+            # Calculate the percentage used by the PID in relation to total memory
+            pid_percent_used = pid_rss / total_mem
+
+            # Print each PID's memory usage with graph
+            print(f"{pid}         [{percent_to_graph(pid_percent_used, args.length)}] {pid_rss_hr}/{total_mem_hr}")
     else:
         # Show the total memory usage
-        print(f"Memory         [{bar_graph} | {percent_used*100:.0f}%] {used_mem}/{total_mem}")
+        print(f"Memory         [{bar_graph} | {percent_used * 100:.0f}%] {used_mem_hr}/{total_mem_hr}")
 
 if __name__ == "__main__":
     main()
